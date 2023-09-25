@@ -1,7 +1,5 @@
 #!/usr/bin/perl
 
-use lib 'c:/xampp2/perl/vendor/lib';
-
 use strict;
 use DBI;
 use JSON;
