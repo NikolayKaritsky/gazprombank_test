@@ -1,0 +1,242 @@
+<html>
+	<head>
+		<meta charset="utf-8">
+
+		<style>
+			div {
+				box-sizing: border-box; font:10pt arial; line-height: 1.5;
+			}
+			input {
+				line-height: 2.5;
+			}
+
+			.outer {
+				display: flex;
+				height: 50px;
+			}
+			.inner {
+				margin-top: auto;
+				margin-bottom: auto;
+			}
+			.button {
+				height: 30px;
+				width: 80px;
+			}
+
+			.column{float: left; padding:5px;}
+			.row:after{content:""; display: table; clear: both;margin:0 0 2px 0;}
+			.col1 {width:30%;}
+			.col2 {width:70%;text-align: right;}
+			.gray {color:#bbbbbb;}
+			.bg_lgray {background-color:#eeeeee;}
+			.red {color:#ff0000;}
+			.mt {margin-top:20px;}
+			.blue {color:#0000ff;}
+			.nwrap {white-space: nowrap;}
+			.p0 {padding:0px;}
+			.pv10 {padding-top:10px;padding-bottom:10px;}
+
+			.small_font {font-size:8pt};
+
+			.wrap {
+				position: relative;
+				overflow-x: auto;
+				width: 100%;
+				max-width: 100%;
+			}
+
+			table {
+				width: 100%;
+				max-width: 100%;
+				font:10pt arial;
+				line-height: 1.5;
+				border-collapse: collapse;
+			}
+
+			td {
+				padding: 1rem;
+				border: 1px solid rgb(160, 160, 160);
+			}
+
+		</style>
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+	</head>
+	<body>
+		<script>
+			function search () {
+				let xhr = new XMLHttpRequest();
+				xhr.responseType = 'json';
+				let url = new URL(window.location.protocol + '//' + window.location.host + '/cgi/search.cgi');
+				let search_string = $('#search_string').val();
+				if (!search_string) {
+					alert ('Не указана строка поиска');
+					return;
+				}
+				url.searchParams.set('search', search_string);
+
+				let fields = ['address', 'int_id', 'id', 'str', 'exact'];
+				let is_field_checked;
+				for (let field of fields) {
+					let f = $('#s_' + field).is(':checked') ? 1 : 0;
+					if ($('#s_' + field).is(':checked')) {
+						url.searchParams.set(field, 1);
+						is_field_checked = 1;
+
+						console.log(field);
+						console.log(f);
+					}
+				}
+
+				if (!is_field_checked) {
+					alert ('Не указаны поля для поиска');
+					return;
+				}
+
+				xhr.open('GET', url);
+				xhr.send();
+
+				xhr.onload = function() {
+					if (xhr.status != 200) {
+						alert(`Ошибка ${xhr.status}: ${xhr.statusText}`);
+					} else {
+						let responseObj = xhr.response;
+
+						if (responseObj.error) {
+							alert ('Ошибка');
+							return;
+						}
+
+						$('#result_summary').fadeOut(500);
+						$('#result').fadeOut(500);
+
+						let rows = responseObj.rows;
+						let total_rows = responseObj.total_rows;
+
+						setTimeout(
+							function() {
+								$('#result_summary').html(total_rows > rows ? '<b class="red">Показано результатов: ' + rows + ' из ' + total_rows
+									+ '</b>' : 'Найдено результатов: ' + rows);
+
+								let result = '';
+								if (rows) {
+									let columns = ['created', 'id', 'int_id', 'str', 'status', 'address'];
+									result = '<table><tr>';
+									for (let column of columns) {
+										result += '<td>' + column + '</td>';
+									}
+
+									result += '</tr>';
+
+									for (let row of responseObj.result) {
+										result += '<tr>';
+											let nwrap = ' class = "nwrap"'; // nowrap для первого столбца
+											for (let column of columns) {
+												let cell_text = '';
+												if (row[column]) {
+													cell_text = row[column];
+													cell_text = cell_text.replace(/</g, '&lt;');
+													cell_text = cell_text.replace(/b>/g, '&gt;');
+												}
+												result += '<td' + nwrap + '>' + cell_text + '</td>';
+												nwrap = '';
+											}
+										result += '</tr>';
+									}
+									result += '</table>';
+								}
+								$('#result').html(result);
+
+							}, 600);
+
+						$('#result_summary').delay(1000).fadeIn(500);
+						$('#result').delay(1000).fadeIn(500);
+
+						console.log(responseObj.rows);
+					}
+				};
+
+				xhr.onerror = function() {
+					alert("Ошибка");
+				};
+			}
+		</script>
+
+		<form onsubmit="search();return false;">
+			<div class="row bg_lgray" style="width: 600px">
+				<div class="column col1 outer">
+					<div class="inner">Искать строку:</div>
+				</div>
+				<div class="column col2 outer">
+					<input type="text" class="inner" id="search_string">
+				</div>
+			</div>
+			<div class="row bg_lgray" style="width: 600px">
+				<div class="column col1 outer">
+					<div class="inner">в полях:</div>
+				</div>
+				<div class="column col2 p0">
+					<div class="outer">
+						<div class="column inner">
+							<input type="checkbox" id="s_address" checked>
+						</div>
+						<div class="column inner">
+							address
+						</div>
+					</div>
+					<div class="outer">
+						<div class="column inner">
+							<input type="checkbox" id="s_int_id">
+						</div>
+						<div class="column inner">
+							int_id
+						</div>
+					</div>
+					<div class="outer">
+						<div class="column inner">
+							<input type="checkbox" id="s_id">
+						</div>
+						<div class="column inner">
+							id
+						</div>
+					</div>
+					<div class="outer">
+						<div class="column inner">
+							<input type="checkbox" id="s_str">
+						</div>
+						<div class="column inner">
+							str
+						</div>
+					</div>
+					<div class="outer">
+						<div class="column inner small_font" style="text-align: left;">
+							<i class="red">В задаче был указан поиск по полю адреса получателя в обеих таблицах. Это поле есть только в log, поэтому расширил поиск</i>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row bg_lgray" style="width: 600px">
+				<div class="column col1 outer">
+					<div class="inner">Точное совпадение<br><i class="red small_font">(гулять так гулять)</i></div>
+				</div>
+				<div class="column col2 p0">
+					<div class="outer">
+						<div class="column inner">
+							<input type="checkbox" id="s_exact">
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="row bg_lgray" style="width: 600px">
+				<div class="column col1 outer">
+				</div>
+				<div class="column col2 outer">
+					<input type="button" class="inner button" value="Искать" onClick="search()">
+				</div>
+			</div>
+		</form>
+
+		<div id="result_summary" class="pv10"></div>
+		<div id="result" class="wrap"></div>
+
+	</body>
+</html>
