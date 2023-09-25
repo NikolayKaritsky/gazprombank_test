@@ -137,24 +137,6 @@ sub get_args {
 
 ################################################################################
 
-sub sql_select_all {
-
-	my ($sql, @params) = @_;
-
-	$sql =~ s{^\s+}{};
-
-	my $st = $dbi -> prepare ($sql);
-	$st -> execute (@params);
-
-	my $result = $st -> fetchall_arrayref ({});
-	$st -> finish;
-
-	return $result;
-
-}
-
-################################################################################
-
 sub sql_do {
 
 	my ($sql, @params) = @_;
